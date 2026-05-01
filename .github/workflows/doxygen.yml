@@ -1,0 +1,39 @@
+name: Generate Doxygen Documentation
+
+on:
+  push:
+    tags:
+      - 'v*' # Rulează acțiunea doar când se adaugă un tag care începe cu "v" (ex: v1.0, v2.0.1)
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Doxygen
+      run: sudo apt-get update && sudo apt-get install -y doxygen
+
+    - name: Run Doxygen
+      run: |
+        # Navigăm în directorul care conține fișierele sursă
+        cd laboratories/cicd-documentation
+        
+        # Generăm fișierul de configurare default dacă nu există deja
+        if [ ! -f "Doxyfile" ]; then
+          doxygen -g
+          # (Opțional) Se poate înlocui EXTRACT_ALL = NO cu YES pentru a extrage documentația din toate fișierele, chiar dacă nu sunt comentate special pentru doxygen
+          sed -i 's/EXTRACT_ALL            = NO/EXTRACT_ALL            = YES/g' Doxyfile
+        fi
+        
+        # Generăm documentația
+        doxygen Doxyfile
+
+    - name: Upload Doxygen Documentation Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: doxygen-docs
+        # Setăm calea către folderul generat de Doxygen (implicit e "html" în același director)
+        path: laboratories/cicd-documentation/html/
